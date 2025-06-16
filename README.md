@@ -120,6 +120,33 @@ pluginserver_js_start_cmd = /usr/local/bin/kong-js-pluginserver -v --plugins-dir
 pluginserver_js_query_cmd = /usr/local/bin/kong-js-pluginserver --plugins-directory /usr/local/kong/js-plugins --dump-all-plugins
 pluginserver_js_socket = /usr/local/kong/js_pluginserver.sock
 ```
+## Using in Containers or Kubernetes
+
+To run JavaScript plugins inside a containerized Kong Gateway, you need to ensure the plugin server and plugin source code are installed within the Kong container.
+
+> **Note:** Official Kong images run as the `nobody` user. Temporarily switch to `root` when copying files and installing dependencies.
+
+Example `Dockerfile`:
+
+```dockerfile
+FROM kong
+USER root
+
+# Install Node.js and the JavaScript PDK
+RUN apk update && apk add nodejs npm && npm install -g kong-pdk
+
+# Copy your plugin into the container
+COPY your-js-plugin /path/to/your/js-plugins/your-js-plugin
+
+USER kong
+ENTRYPOINT ["/docker-entrypoint.sh"]
+EXPOSE 8000 8443 8001 8444
+STOPSIGNAL SIGQUIT
+HEALTHCHECK --interval=10s --timeout=10s --retries=10 CMD kong health
+CMD ["kong", "docker-start"]
+```
+
+Make sure the directory `/path/to/your/js-plugins/` matches the one used in `kong.conf` under `pluginserver_js_start_cmd`.
 
 ## More Resources
 
